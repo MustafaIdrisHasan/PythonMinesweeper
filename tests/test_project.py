@@ -6,15 +6,19 @@ Run this to check if everything works correctly.
 
 import sys
 from typing import List, Tuple
+from pathlib import Path
+
+# Add src to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 def test_imports() -> Tuple[bool, str]:
     """Test that all modules can be imported."""
     try:
-        from minesweeper import Minesweeper
-        from ai import MinesweeperAI
-        from stats import GameStats
-        from gui import MinesweeperGUI
+        from src.minesweeper import Minesweeper
+        from src.ai import MinesweeperAI
+        from src.stats import GameStats
+        from src.gui import MinesweeperGUI
         return True, "[PASS] All modules imported successfully"
     except Exception as e:
         return False, f"[FAIL] Import failed: {e}"
@@ -23,7 +27,7 @@ def test_imports() -> Tuple[bool, str]:
 def test_game_creation() -> Tuple[bool, str]:
     """Test basic game creation."""
     try:
-        from minesweeper import Minesweeper
+        from src.minesweeper import Minesweeper
         game = Minesweeper(9, 9, 10)
         assert game.width == 9 and game.height == 9 and game.num_mines == 10
         return True, "[PASS] Game creation works correctly"
@@ -34,7 +38,7 @@ def test_game_creation() -> Tuple[bool, str]:
 def test_game_logic() -> Tuple[bool, str]:
     """Test core game logic."""
     try:
-        from minesweeper import Minesweeper
+        from src.minesweeper import Minesweeper
         game = Minesweeper(10, 10, 10)
         
         # Test reveal
@@ -57,7 +61,7 @@ def test_game_logic() -> Tuple[bool, str]:
 def test_neighbors() -> Tuple[bool, str]:
     """Test neighbor calculation."""
     try:
-        from minesweeper import Minesweeper
+        from src.minesweeper import Minesweeper
         game = Minesweeper(5, 5, 5)
         
         # Center cell should have 8 neighbors
@@ -76,7 +80,7 @@ def test_neighbors() -> Tuple[bool, str]:
 def test_first_click_safety() -> Tuple[bool, str]:
     """Test first-click safety."""
     try:
-        from minesweeper import Minesweeper
+        from src.minesweeper import Minesweeper
         # First click should be safe
         game = Minesweeper(10, 10, 20)
         result = game.reveal(5, 5)
@@ -90,7 +94,7 @@ def test_first_click_safety() -> Tuple[bool, str]:
 def test_statistics() -> Tuple[bool, str]:
     """Test statistics tracking."""
     try:
-        from stats import GameStats
+        from src.stats import GameStats
         stats = GameStats()
         
         # Record a game
@@ -109,8 +113,8 @@ def test_statistics() -> Tuple[bool, str]:
 def test_ai() -> Tuple[bool, str]:
     """Test AI solver."""
     try:
-        from minesweeper import Minesweeper
-        from ai import MinesweeperAI
+        from src.minesweeper import Minesweeper
+        from src.ai import MinesweeperAI
         
         game = Minesweeper(10, 10, 10)
         ai = MinesweeperAI(game)
@@ -127,7 +131,7 @@ def test_ai() -> Tuple[bool, str]:
 def test_flag_count() -> Tuple[bool, str]:
     """Test flag counting."""
     try:
-        from minesweeper import Minesweeper
+        from src.minesweeper import Minesweeper
         game = Minesweeper(10, 10, 10)
         
         assert game.get_flag_count() == 0
@@ -143,7 +147,7 @@ def test_flag_count() -> Tuple[bool, str]:
 def test_chording() -> Tuple[bool, str]:
     """Test chording functionality."""
     try:
-        from minesweeper import Minesweeper
+        from src.minesweeper import Minesweeper
         # This is a probabilistic test, just verify method exists and runs
         game = Minesweeper(5, 5, 5)
         game.reveal(2, 2)  # Reveal a cell first

@@ -1,7 +1,7 @@
 import random
 import time
 from typing import Tuple, List, Optional
-from minesweeper import Minesweeper
+from src.minesweeper import Minesweeper
 
 
 class MinesweeperAI:

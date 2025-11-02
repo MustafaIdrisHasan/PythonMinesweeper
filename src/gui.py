@@ -2,9 +2,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import time
 from typing import Optional, Tuple
-from minesweeper import Minesweeper
-from ai import MinesweeperAI
-from stats import GameStats
+from src.minesweeper import Minesweeper
+from src.ai import MinesweeperAI
+from src.stats import GameStats
 
 
 class MinesweeperGUI:

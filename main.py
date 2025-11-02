@@ -6,7 +6,7 @@ A feature-rich Minesweeper game implementation with AI solver.
 Run this file to start the game.
 """
 
-from gui import MinesweeperGUI
+from src.gui import MinesweeperGUI
 
 
 def main():
