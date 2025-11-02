@@ -1,26 +1,91 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import time
-from typing import Optional, Tuple
+import sys
+import platform
+from typing import Optional, Tuple, Dict
 from src.minesweeper import Minesweeper
 from src.ai import MinesweeperAI
 from src.stats import GameStats
+
+# Sound effects using winsound (Windows) or beep (cross-platform)
+try:
+    if platform.system() == 'Windows':
+        import winsound
+        def play_sound(frequency=800, duration=100):
+            """Play a beep sound on Windows."""
+            try:
+                winsound.Beep(frequency, duration)
+            except:
+                pass
+    else:
+        # Linux/Mac - use system beep
+        def play_sound(frequency=800, duration=100):
+            """Play a beep sound on Linux/Mac."""
+            try:
+                sys.stdout.write('\a')
+                sys.stdout.flush()
+            except:
+                pass
+except:
+    # Fallback - silent
+    def play_sound(frequency=800, duration=100):
+        pass
 
 
 class MinesweeperGUI:
     """Modern Minesweeper GUI with all features."""
     
-    # Color scheme
-    COLORS = {
-        'bg': '#2b2b2b',
-        'cell_bg': '#c0c0c0',
-        'cell_hidden': '#d3d3d3',
-        'cell_revealed': '#ffffff',
-        'cell_flag': '#ff0000',
-        'mine': '#000000',
-        'text': '#000000',
-        'numbers': ['', '#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080']
+    # Theme definitions
+    THEMES = {
+        'Dark': {
+            'bg': '#2b2b2b',
+            'cell_hidden': '#d3d3d3',
+            'cell_revealed': '#ffffff',
+            'cell_flag': '#ffcccc',
+            'mine': '#000000',
+            'text': '#000000',
+            'fg': 'white',
+            'info_fg': 'yellow',
+            'numbers': ['', '#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080']
+        },
+        'Light': {
+            'bg': '#f5f5f5',
+            'cell_hidden': '#e0e0e0',
+            'cell_revealed': '#ffffff',
+            'cell_flag': '#ffcccc',
+            'mine': '#000000',
+            'text': '#000000',
+            'fg': 'black',
+            'info_fg': 'blue',
+            'numbers': ['', '#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080']
+        },
+        'Classic': {
+            'bg': '#c0c0c0',
+            'cell_hidden': '#c0c0c0',
+            'cell_revealed': '#ffffff',
+            'cell_flag': '#ff0000',
+            'mine': '#000000',
+            'text': '#000000',
+            'fg': 'black',
+            'info_fg': 'darkblue',
+            'numbers': ['', '#0000ff', '#008000', '#ff0000', '#000080', '#800000', '#008080', '#000000', '#808080']
+        },
+        'Modern': {
+            'bg': '#1a1a2e',
+            'cell_hidden': '#16213e',
+            'cell_revealed': '#0f3460',
+            'cell_flag': '#e94560',
+            'mine': '#ff0000',
+            'text': '#ffffff',
+            'fg': '#ffffff',
+            'info_fg': '#00ff00',
+            'numbers': ['', '#4ECDC4', '#FFE66D', '#FF6B6B', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#FFFFD2']
+        }
     }
+    
+    # Default color scheme (Dark theme)
+    COLORS = THEMES['Dark']
     
     DIFFICULTIES = {
         'Beginner': (9, 9, 10),
@@ -39,8 +104,10 @@ class MinesweeperGUI:
         self.ai: Optional[MinesweeperAI] = None
         self.stats = GameStats()
         self.current_difficulty = 'Beginner'
+        self.current_theme = 'Dark'
         self.start_time = None
         self.timer_running = False
+        self.sounds_enabled = True
         
         # UI Components
         self.cells = []
@@ -93,6 +160,20 @@ class MinesweeperGUI:
         self.ai_btn.pack(side=tk.LEFT, padx=10)
         self.ai_active = False
         
+        # Theme selector
+        theme_frame = tk.Frame(top_frame, bg=self.COLORS['bg'])
+        theme_frame.pack(side=tk.LEFT, padx=10)
+        
+        tk.Label(theme_frame, text="Theme:", bg=self.COLORS['bg'], 
+                fg=self.COLORS['fg'], font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=5)
+        
+        self.theme_var = tk.StringVar(value=self.current_theme)
+        theme_menu = ttk.Combobox(theme_frame, textvariable=self.theme_var, 
+                                 values=list(self.THEMES.keys()),
+                                 state='readonly', width=10)
+        theme_menu.pack(side=tk.LEFT, padx=5)
+        theme_menu.bind('<<ComboboxSelected>>', self.on_theme_change)
+        
         # Info panel
         info_frame = tk.Frame(self.root, bg=self.COLORS['bg'], pady=5)
         info_frame.pack(fill=tk.X)
@@ -122,11 +203,44 @@ class MinesweeperGUI:
         # Keyboard shortcuts
         self.root.bind('<F2>', lambda e: self.new_game())
         self.root.bind('<Control-r>', lambda e: self.new_game())
+        self.root.bind('<Escape>', lambda e: self.new_game())
+        self.root.bind('<space>', lambda e: self.toggle_ai())
+        self.root.bind('<Control-s>', lambda e: self.show_stats())
+        self.root.bind('<Control-t>', lambda e: self.toggle_sounds())
+        self.root.focus_set()  # Enable keyboard focus
         
     def on_difficulty_change(self, event=None):
         """Handle difficulty change."""
         self.current_difficulty = self.diff_var.get()
         self.new_game()
+    
+    def on_theme_change(self, event=None):
+        """Handle theme change."""
+        self.current_theme = self.theme_var.get()
+        self.COLORS = self.THEMES[self.current_theme]
+        self.apply_theme()
+    
+    def apply_theme(self):
+        """Apply current theme to all UI elements."""
+        self.root.configure(bg=self.COLORS['bg'])
+        
+        # Update info label
+        if self.info_label:
+            self.info_label.config(bg=self.COLORS['bg'], fg=self.COLORS['info_fg'])
+        
+        # Update mine counter and timer
+        if self.mine_counter_label:
+            self.mine_counter_label.config(bg=self.COLORS['bg'], fg=self.COLORS['fg'])
+        if self.timer_label:
+            self.timer_label.config(bg=self.COLORS['bg'], fg=self.COLORS['fg'])
+        
+        # Update board frame
+        if hasattr(self, 'board_frame'):
+            self.board_frame.configure(bg=self.COLORS['bg'])
+        
+        # Update display if game exists
+        if self.game:
+            self.update_display()
     
     def new_game(self):
         """Start a new game."""
@@ -219,7 +333,7 @@ class MinesweeperGUI:
                 btn.grid(row=y, column=x, padx=1, pady=1)
                 
                 # Right-click binding
-                btn.bind('<Button-3>', lambda e, cx=x, cy=y: self.on_cell_right_click(cx, cy))
+                btn.bind('<Button-3>', lambda e, cx=x, cy=y: self.on_cell_right_click(e, cx, cy))
                 
                 # Middle-click for chording
                 btn.bind('<Button-2>', lambda e, cx=x, cy=y: self.on_cell_middle_click(cx, cy))
@@ -232,6 +346,9 @@ class MinesweeperGUI:
         if self.game.game_over:
             return
         
+        if self.sounds_enabled:
+            play_sound(400, 50)  # Click sound
+        
         if not self.timer_running and not self.game.revealed[y][x]:
             self.start_timer()
         
@@ -239,16 +356,48 @@ class MinesweeperGUI:
         self.update_display()
         
         if not success:
+            if self.sounds_enabled:
+                play_sound(200, 300)  # Mine explosion sound
             self.game_over(lost=True)
         elif self.game.game_won:
+            if self.sounds_enabled:
+                play_sound(800, 200)  # Win sound
             self.game_over(lost=False)
         else:
             self.update_info(f"Revealed ({x}, {y})")
     
-    def on_cell_right_click(self, x: int, y: int):
-        """Handle right-click to toggle flag."""
+    def on_cell_right_click(self, event, x: int, y: int):
+        """Handle right-click to toggle flag or show context menu."""
+        if self.game.game_over:
+            return
+        
+        # Check if Shift is held for context menu, otherwise toggle flag directly
+        if event.state & 0x1:  # Shift key held
+            # Show context menu
+            context_menu = tk.Menu(self.root, tearoff=0)
+            context_menu.add_command(label="Flag/Unflag", 
+                                    command=lambda: self.toggle_flag_cell(x, y))
+            context_menu.add_command(label="Reveal", 
+                                    command=lambda: self.on_cell_click(x, y))
+            if self.game.revealed[y][x] and self.game.board[y][x] > 0:
+                context_menu.add_command(label="Chord", 
+                                        command=lambda: self.on_cell_middle_click(x, y))
+            
+            try:
+                context_menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                context_menu.grab_release()
+        else:
+            # Direct flag toggle (traditional behavior)
+            self.toggle_flag_cell(x, y)
+    
+    def toggle_flag_cell(self, x: int, y: int):
+        """Toggle flag on a cell."""
         if self.game.game_over or self.game.revealed[y][x]:
             return
+        
+        if self.sounds_enabled:
+            play_sound(600, 50)  # Flag sound
         
         self.game.toggle_flag(x, y)
         self.update_display()
@@ -275,16 +424,16 @@ class MinesweeperGUI:
                 btn = self.cells[y][x]
                 
                 if self.game.flagged[y][x]:
-                    btn.config(text='🚩', bg='#ffcccc', state=tk.NORMAL)
+                    btn.config(text='🚩', bg=self.COLORS['cell_flag'], state=tk.NORMAL)
                 elif self.game.revealed[y][x]:
                     btn.config(state=tk.DISABLED, relief=tk.SUNKEN)
                     if self.game.board[y][x] == -1:
-                        btn.config(text='💣', bg='#ff0000', fg='white')
+                        btn.config(text='💣', bg=self.COLORS['mine'], fg='white')
                     elif self.game.board[y][x] == 0:
                         btn.config(text='', bg=self.COLORS['cell_revealed'])
                     else:
                         num = self.game.board[y][x]
-                        color = self.COLORS['numbers'][num] if num < len(self.COLORS['numbers']) else '#000000'
+                        color = self.COLORS['numbers'][num] if num < len(self.COLORS['numbers']) else self.COLORS['text']
                         btn.config(text=str(num), bg=self.COLORS['cell_revealed'], fg=color)
                 else:
                     btn.config(text='', bg=self.COLORS['cell_hidden'], state=tk.NORMAL)
@@ -380,6 +529,14 @@ class MinesweeperGUI:
     def update_info(self, message: str):
         """Update the info label."""
         self.info_label.config(text=message)
+    
+    def toggle_sounds(self):
+        """Toggle sound effects on/off."""
+        self.sounds_enabled = not self.sounds_enabled
+        status = "enabled" if self.sounds_enabled else "disabled"
+        self.update_info(f"Sounds {status}")
+        if self.sounds_enabled:
+            play_sound(500, 100)  # Confirmation sound
     
     def show_stats(self):
         """Show statistics dialog."""
