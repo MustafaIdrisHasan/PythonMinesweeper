@@ -1,0 +1,14 @@
+{
+  "games_played": 1,
+  "games_won": 1,
+  "games_lost": 0,
+  "best_times": {
+    "beginner": 120.5,
+    "intermediate": null,
+    "expert": null,
+    "custom": null
+  },
+  "total_time": 120.5,
+  "win_streak": 1,
+  "best_win_streak": 1
+}

@@ -1,0 +1,14 @@
+# Minesweeper - Professional Edition
+# Python dependencies
+
+# Core dependencies (Python standard library only)
+# tkinter is included with Python on most systems
+# If tkinter is not available, install:
+# - Windows: Usually pre-installed
+# - macOS: Requires Python with tkinter support
+# - Linux: sudo apt-get install python3-tk
+
+# Optional: For development and testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
